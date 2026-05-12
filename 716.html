@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EF07CO05 — Algoritmos, Decomposição e Reúso</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #F5F4F0;
+  --surface:  #FFFFFF;
+  --surf2:    #F0EEE9;
+  --border:   #DDDBD4;
+  --border2:  #C8C5BC;
+  --text:     #1C1B18;
+  --muted:    #6B6960;
+  --blue:     #2563EB;
+  --blue-l:   #EFF6FF;
+  --blue-d:   #1D4ED8;
+  --green:    #16A34A;
+  --green-l:  #F0FDF4;
+  --red:      #DC2626;
+  --red-l:    #FEF2F2;
+  --amber:    #D97706;
+  --amber-l:  #FFFBEB;
+  --purple:   #7C3AED;
+  --purple-l: #F5F3FF;
+  --teal:     #0D9488;
+  --teal-l:   #F0FDFA;
+  --r:        10px;
+  --rl:       14px;
+  --sh:       0 1px 3px rgba(0,0,0,0.08);
+}
+
+body { font-family: 'Nunito','Segoe UI',Arial,sans-serif; background:var(--bg); color:var(--text); line-height:1.6; padding:24px 16px 60px; }
+.page { max-width:700px; margin:0 auto; }
+
+.header { background:var(--blue); color:#fff; border-radius:var(--rl); padding:24px 28px; margin-bottom:28px; position:relative; overflow:hidden; }
+.header::after { content:''; position:absolute; right:-30px; top:-30px; width:160px; height:160px; background:rgba(255,255,255,0.07); border-radius:50%; }
+.badge { display:inline-block; background:rgba(255,255,255,0.2); color:#fff; font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; padding:3px 10px; border-radius:999px; margin-bottom:10px; }
+.header h1 { font-size:20px; font-weight:700; margin-bottom:6px; }
+.header p { font-size:13px; opacity:0.85; }
+
+.concepts { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:28px; }
+.concept { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:14px 10px; text-align:center; box-shadow:var(--sh); }
+.concept .ic { font-size:26px; margin-bottom:8px; display:block; }
+.concept h3 { font-size:12px; font-weight:700; margin-bottom:4px; }
+.concept p { font-size:11px; color:var(--muted); line-height:1.4; }
+
+.progress-wrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--rl); padding:14px 20px; margin-bottom:24px; box-shadow:var(--sh); display:none; align-items:center; gap:14px; }
+.prog-label { font-size:12px; font-weight:700; color:var(--muted); white-space:nowrap; }
+.prog-bar-bg { flex:1; height:8px; background:var(--surf2); border-radius:999px; overflow:hidden; border:1px solid var(--border); }
+.prog-bar-fill { height:100%; background:var(--blue); border-radius:999px; width:0%; transition:width 0.4s; }
+.prog-count { font-size:13px; font-weight:700; color:var(--blue); white-space:nowrap; min-width:40px; text-align:right; }
+
+.sec-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin:28px 0 12px; display:flex; align-items:center; gap:10px; }
+.sec-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+.activity { background:var(--surface); border:1px solid var(--border); border-radius:var(--rl); padding:20px 22px; margin-bottom:14px; box-shadow:var(--sh); }
+.act-header { display:flex; align-items:flex-start; gap:12px; margin-bottom:14px; }
+.act-num { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; flex-shrink:0; }
+.n-blue   { background:var(--blue-l);   color:var(--blue); }
+.n-green  { background:var(--green-l);  color:var(--green); }
+.n-amber  { background:var(--amber-l);  color:var(--amber); }
+.n-purple { background:var(--purple-l); color:var(--purple); }
+.n-teal   { background:var(--teal-l);   color:var(--teal); }
+.act-header h3 { font-size:15px; font-weight:700; line-height:1.4; padding-top:4px; }
+.enunciado { font-size:13px; color:var(--muted); line-height:1.7; margin-bottom:14px; }
+
+.options { display:flex; flex-direction:column; gap:7px; }
+.option { display:flex; align-items:flex-start; gap:10px; background:var(--surf2); border:1.5px solid var(--border); border-radius:var(--r); padding:10px 14px; cursor:pointer; font-size:13px; line-height:1.5; transition:border-color 0.15s,background 0.15s; user-select:none; }
+.option:hover  { border-color:var(--blue); background:var(--blue-l); }
+.option.pending  { border-color:var(--blue); background:var(--blue-l); color:#1E40AF; pointer-events:none; }
+.option.correct  { border-color:var(--green); background:var(--green-l); color:#14532D; pointer-events:none; }
+.option.wrong    { border-color:var(--red);   background:var(--red-l);   color:#7F1D1D; pointer-events:none; }
+.option.disabled { pointer-events:none; opacity:0.55; }
+.opt-letter { width:22px; height:22px; border-radius:50%; border:1.5px solid var(--border2); background:var(--surface); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; }
+.option.correct .opt-letter { background:var(--green); color:#fff; border-color:var(--green); }
+.option.wrong   .opt-letter { background:var(--red);   color:#fff; border-color:var(--red); }
+
+.feedback { display:none; margin-top:12px; font-size:13px; font-weight:600; line-height:1.5; padding:10px 14px; border-radius:var(--r); }
+.feedback.ok   { display:block; background:var(--green-l); color:#14532D; border:1px solid #86EFAC; }
+.feedback.err  { display:block; background:var(--red-l);   color:#7F1D1D; border:1px solid #FCA5A5; }
+.feedback.info { display:block; background:var(--blue-l);  color:#1E40AF; border:1px solid #BFDBFE; }
+
+.step-list { display:flex; flex-direction:column; gap:6px; }
+.step-row { display:flex; align-items:center; gap:10px; background:var(--surf2); border:1.5px solid var(--border); border-radius:var(--r); padding:10px 12px; cursor:grab; font-size:13px; line-height:1.4; transition:background 0.15s,border-color 0.15s; }
+.step-row:active { cursor:grabbing; }
+.step-row.over    { border-color:var(--blue); background:var(--blue-l); }
+.step-row.correct { border-color:var(--green); background:var(--green-l); color:#14532D; }
+.step-row.wrong   { border-color:var(--red);   background:var(--red-l);   color:#7F1D1D; }
+.grip { color:var(--border2); font-size:16px; }
+
+.code-block { background:#1E1E2E; color:#CDD6F4; border-radius:var(--r); padding:14px 18px; font-family:'Fira Code','Consolas',monospace; font-size:12.5px; line-height:1.8; margin-bottom:14px; overflow-x:auto; border:1px solid #313244; }
+.kw{color:#CBA6F7;} .fn{color:#89DCEB;} .str{color:#A6E3A1;} .cm{color:#6C7086;font-style:italic;} .nm{color:#FAB387;}
+
+.match-row { display:flex; gap:10px; align-items:center; margin-bottom:8px; }
+.match-txt { flex:1; font-size:12.5px; background:var(--surf2); border:1px solid var(--border); border-radius:var(--r); padding:8px 12px; line-height:1.5; }
+.match-sel { flex:0 0 160px; font-family:'Nunito',sans-serif; font-size:12.5px; font-weight:600; border:1.5px solid var(--border2); border-radius:var(--r); padding:7px 10px; background:var(--surface); color:var(--text); cursor:pointer; }
+.match-sel:focus { outline:2px solid var(--blue); outline-offset:1px; }
+.match-sel.ok  { border-color:var(--green); background:var(--green-l); color:#14532D; }
+.match-sel.err { border-color:var(--red);   background:var(--red-l);   color:#7F1D1D; }
+
+.gaps-text { font-size:14px; line-height:2.6; background:var(--surf2); border:1px solid var(--border); border-radius:var(--r); padding:16px 18px; margin-bottom:14px; }
+.gap-input { display:inline-block; font-family:'Nunito',sans-serif; font-size:13px; font-weight:700; border:none; border-bottom:2px solid var(--blue); background:transparent; color:var(--blue); width:130px; text-align:center; padding:1px 4px; outline:none; margin:0 2px; }
+.gap-input.ok  { border-bottom-color:var(--green); color:var(--green); }
+.gap-input.err { border-bottom-color:var(--red);   color:var(--red); }
+.gap-input:focus { border-bottom-width:3px; }
+.gap-input:disabled { opacity:0.7; }
+
+.btn-row { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+button { font-family:'Nunito',sans-serif; font-weight:700; font-size:13px; border-radius:var(--r); padding:8px 18px; border:1.5px solid var(--border2); background:var(--surface); color:var(--text); cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:background 0.15s; }
+button:hover:not(:disabled) { background:var(--surf2); }
+button.primary { background:var(--blue); color:#fff; border-color:var(--blue); }
+button.primary:hover:not(:disabled) { background:var(--blue-d); }
+button:disabled { background:var(--surf2); color:var(--muted); cursor:not-allowed; border-color:var(--border); }
+
+.btn-final { display:block; width:100%; background:var(--green); color:#fff; border:none; border-radius:var(--r); padding:15px 20px; font-family:'Nunito',sans-serif; font-size:15px; font-weight:700; cursor:pointer; margin-top:28px; transition:background 0.15s; }
+.btn-final:hover:not(:disabled) { background:#15803D; }
+.btn-final:disabled { background:var(--border2); color:var(--muted); cursor:not-allowed; }
+
+.final-card { background:var(--surface); border:2px solid var(--border); border-radius:var(--rl); padding:28px 24px; margin-top:28px; box-shadow:var(--sh); display:none; text-align:center; }
+.final-card.show { display:block; }
+.nota-circle { width:120px; height:120px; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:0 auto 18px; border:4px solid var(--blue); background:var(--blue-l); }
+.nota-num { font-size:50px; font-weight:700; color:var(--blue); line-height:1; }
+.nota-dez { font-size:14px; color:var(--muted); font-weight:600; margin-top:2px; }
+.nota-circle.verde    { border-color:var(--green); background:var(--green-l); }
+.nota-circle.verde    .nota-num { color:var(--green); }
+.nota-circle.amarelo  { border-color:var(--amber); background:var(--amber-l); }
+.nota-circle.amarelo  .nota-num { color:var(--amber); }
+.nota-circle.vermelho { border-color:var(--red);   background:var(--red-l); }
+.nota-circle.vermelho .nota-num { color:var(--red); }
+.nota-msg     { font-size:16px; font-weight:700; margin-bottom:8px; }
+.nota-detalhe { font-size:13px; color:var(--muted); line-height:1.6; }
+.nota-breakdown { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:20px; text-align:left; }
+.bi { background:var(--surf2); border:1px solid var(--border); border-radius:var(--r); padding:9px 12px; font-size:12.5px; display:flex; justify-content:space-between; align-items:center; }
+.bi-label { color:var(--muted); }
+.bi-val { font-weight:700; }
+.bi-val.ok  { color:var(--green); }
+.bi-val.err { color:var(--red); }
+.bi-val.par { color:var(--amber); }
+
+@media (max-width:540px) {
+  .concepts { grid-template-columns:repeat(2,1fr); }
+  .match-row { flex-direction:column; }
+  .match-sel { flex:1 1 100%; width:100%; }
+  .header h1 { font-size:17px; }
+  .nota-breakdown { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="header">
+  <div class="badge">BNCC · 7.º Ano · Computação</div>
+  <h1>EF07CO05 — Algoritmos, Decomposição e Reúso</h1>
+  <p>Responda todas as atividades e clique em "Ver resultado final" para receber sua nota de 0 a 10.</p>
+</div>
+
+<div class="concepts">
+  <div class="concept"><span class="ic">🔢</span><h3>Algoritmo</h3><p>Sequência de passos para resolver um problema</p></div>
+  <div class="concept"><span class="ic">🧩</span><h3>Decomposição</h3><p>Dividir o problema em partes menores</p></div>
+  <div class="concept"><span class="ic">♻️</span><h3>Reúso</h3><p>Aproveitar soluções já criadas</p></div>
+  <div class="concept"><span class="ic">🤝</span><h3>Colaboração</h3><p>Trabalhar em equipe para programar</p></div>
+</div>
+
+<div class="progress-wrap" id="prog-wrap">
+  <span class="prog-label">Progresso</span>
+  <div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-fill"></div></div>
+  <span class="prog-count" id="prog-count">0 / 7</span>
+</div>
+
+<!-- Atividade 1 -->
+<div class="sec-title">Atividade 1 — Múltipla escolha</div>
+
+<div class="activity">
+  <div class="act-header"><div class="act-num n-blue">1</div><h3>O que significa decompor um problema na computação?</h3></div>
+  <div class="options" id="q1">
+    <div class="option" onclick="pick('q1',this,false)"><div class="opt-letter">A</div>Criar um programa muito longo e complexo de uma só vez.</div>
+    <div class="option" onclick="pick('q1',this,true)"><div class="opt-letter">B</div>Dividir o problema em partes menores, mais fáceis de resolver.</div>
+    <div class="option" onclick="pick('q1',this,false)"><div class="opt-letter">C</div>Apagar o problema e começar outro diferente.</div>
+    <div class="option" onclick="pick('q1',this,false)"><div class="opt-letter">D</div>Usar um programa pronto da internet sem modificar nada.</div>
+  </div>
+  <div class="feedback" id="fb1"></div>
+</div>
+
+<div class="activity">
+  <div class="act-header"><div class="act-num n-blue">2</div><h3>O que é reúso no contexto da programação?</h3></div>
+  <div class="options" id="q2">
+    <div class="option" onclick="pick('q2',this,false)"><div class="opt-letter">A</div>Escrever todo o código do zero sempre que precisar de uma solução.</div>
+    <div class="option" onclick="pick('q2',this,false)"><div class="opt-letter">B</div>Deletar partes antigas do programa para criar espaço.</div>
+    <div class="option" onclick="pick('q2',this,true)"><div class="opt-letter">C</div>Aproveitar funções ou soluções já criadas em outros contextos.</div>
+    <div class="option" onclick="pick('q2',this,false)"><div class="opt-letter">D</div>Copiar o trabalho de outro colega sem colaborar.</div>
+  </div>
+  <div class="feedback" id="fb2"></div>
+</div>
+
+<div class="activity">
+  <div class="act-header"><div class="act-num n-blue">3</div><h3>O que significa "automatizar" um algoritmo?</h3></div>
+  <div class="options" id="q3">
+    <div class="option" onclick="pick('q3',this,false)"><div class="opt-letter">A</div>Fazer o algoritmo funcionar somente com a ajuda de um professor.</div>
+    <div class="option" onclick="pick('q3',this,true)"><div class="opt-letter">B</div>Escrever o algoritmo em uma linguagem de programação para o computador executá-lo.</div>
+    <div class="option" onclick="pick('q3',this,false)"><div class="opt-letter">C</div>Desenhar o algoritmo no papel sem usar computador.</div>
+    <div class="option" onclick="pick('q3',this,false)"><div class="opt-letter">D</div>Memorizar os passos do algoritmo de cabeça.</div>
+  </div>
+  <div class="feedback" id="fb3"></div>
+</div>
+
+<!-- Atividade 2 -->
+<div class="sec-title">Atividade 2 — Ordenar etapas</div>
+
+<div class="activity">
+  <div class="act-header"><div class="act-num n-green">4</div><h3>Ordene as etapas de um processo colaborativo de programação:</h3></div>
+  <p class="enunciado">Arraste os cartões para a ordem correta e clique em "Confirmar ordem".</p>
+  <div class="step-list" id="sortable">
+    <div class="step-row" draggable="true" data-order="3"><span class="grip">⠿</span> Cada integrante resolve a sua parte do problema</div>
+    <div class="step-row" draggable="true" data-order="1"><span class="grip">⠿</span> Identificar e entender o problema a ser resolvido</div>
+    <div class="step-row" draggable="true" data-order="4"><span class="grip">⠿</span> Unir as soluções e testar o programa completo</div>
+    <div class="step-row" draggable="true" data-order="2"><span class="grip">⠿</span> Decompor o problema e dividir as tarefas entre o grupo</div>
+    <div class="step-row" draggable="true" data-order="5"><span class="grip">⠿</span> Revisar e melhorar o código de forma cooperativa</div>
+  </div>
+  <div class="btn-row">
+    <button class="primary" id="btn-ordem" onclick="confirmarOrdem()">✔ Confirmar ordem</button>
+    <button id="btn-shuffle" onclick="shuffleSteps()">⟳ Embaralhar</button>
+  </div>
+  <div class="feedback" id="fb4"></div>
+</div>
+
+<!-- Atividade 3 -->
+<div class="sec-title">Atividade 3 — Leitura de código</div>
+
+<div class="activity">
+  <div class="act-header"><div class="act-num n-amber">5</div><h3>Analise o código abaixo e responda:</h3></div>
+  <div class="code-block"><span class="cm"># Função reutilizável para calcular área de triângulo</span>
+<span class="kw">def</span> <span class="fn">calcular_area</span>(base, altura):
+    area = base * altura / <span class="nm">2</span>
+    <span class="kw">return</span> area
+
+<span class="cm"># Programa principal — usa a função três vezes</span>
+triangulo1 = <span class="fn">calcular_area</span>(<span class="nm">5</span>, <span class="nm">3</span>)
+triangulo2 = <span class="fn">calcular_area</span>(<span class="nm">8</span>, <span class="nm">4</span>)
+triangulo3 = <span class="fn">calcular_area</span>(<span class="nm">6</span>, <span class="nm">7</span>)
+<span class="fn">print</span>(<span class="str">"Áreas:"</span>, triangulo1, triangulo2, triangulo3)</div>
+  <p class="enunciado">Qual conceito o código demonstra ao chamar <code style="background:#F0EEE9;padding:2px 7px;border-radius:5px;font-family:'Fira Code',monospace;font-size:12px">calcular_area</code> três vezes em vez de repetir a fórmula?</p>
+  <div class="options" id="q5">
+    <div class="option" onclick="pick('q5',this,false)"><div class="opt-letter">A</div>Decomposição, pois o problema foi dividido em triângulos menores.</div>
+    <div class="option" onclick="pick('q5',this,true)"><div class="opt-letter">B</div>Reúso, pois a função foi criada uma vez e usada em vários contextos.</div>
+    <div class="option" onclick="pick('q5',this,false)"><div class="opt-letter">C</div>Automatização, pois o computador calculou sozinho sem função.</div>
+    <div class="option" onclick="pick('q5',this,false)"><div class="opt-letter">D</div>Colaboração, pois vários programadores escreveram juntos.</div>
+  </div>
+  <div class="feedback" id="fb5"></div>
+</div>
+
+<!-- Atividade 4 -->
+<div class="sec-title">Atividade 4 — Relacionar conceitos</div>
+
+<div class="activity">
+  <div class="act-header"><div class="act-num n-purple">6</div><h3>Relacione cada situação ao conceito correto:</h3></div>
+  <div id="match-area">
+    <div class="match-row">
+      <div class="match-txt">Uma equipe separa o sistema de uma loja em: cadastro, estoque e pagamento.</div>
+      <select class="match-sel" id="m1"><option value="">Escolha...</option><option value="decomp">Decomposição</option><option value="reuso">Reúso</option><option value="auto">Automatização</option><option value="colab">Colaboração</option></select>
+    </div>
+    <div class="match-row">
+      <div class="match-txt">A mesma função de validar CPF é usada em três telas diferentes do sistema.</div>
+      <select class="match-sel" id="m2"><option value="">Escolha...</option><option value="decomp">Decomposição</option><option value="reuso">Reúso</option><option value="auto">Automatização</option><option value="colab">Colaboração</option></select>
+    </div>
+    <div class="match-row">
+      <div class="match-txt">O programa calcula automaticamente o desconto de todos os produtos ao clicar em um botão.</div>
+      <select class="match-sel" id="m3"><option value="">Escolha...</option><option value="decomp">Decomposição</option><option value="reuso">Reúso</option><option value="auto">Automatização</option><option value="colab">Colaboração</option></select>
+    </div>
+    <div class="match-row">
+      <div class="match-txt">Dois alunos trabalham juntos: um escreve o código e o outro testa os resultados.</div>
+      <select class="match-sel" id="m4"><option value="">Escolha...</option><option value="decomp">Decomposição</option><option value="reuso">Reúso</option><option value="auto">Automatização</option><option value="colab">Colaboração</option></select>
+    </div>
+  </div>
+  <div class="btn-row">
+    <button class="primary" id="btn-match" onclick="confirmarMatch()">✔ Confirmar relações</button>
+  </div>
+  <div class="feedback" id="fb6"></div>
+</div>
+
+<!-- Atividade 5 -->
+<div class="sec-title">Atividade 5 — Complete as lacunas</div>
+
+<div class="activity">
+  <div class="act-header"><div class="act-num n-teal">7</div><h3>Preencha as lacunas com a palavra correta:</h3></div>
+  <p class="enunciado">Use as palavras do quadro. Clique em "Limpar" para corrigir antes de confirmar.</p>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+    <span style="background:var(--amber-l);color:var(--amber);border-radius:999px;padding:4px 14px;font-size:12px;font-weight:700;border:1px solid #FDE68A;">algoritmo</span>
+    <span style="background:var(--blue-l);color:var(--blue);border-radius:999px;padding:4px 14px;font-size:12px;font-weight:700;border:1px solid #BFDBFE;">decomposição</span>
+    <span style="background:var(--purple-l);color:var(--purple);border-radius:999px;padding:4px 14px;font-size:12px;font-weight:700;border:1px solid #DDD6FE;">reúso</span>
+    <span style="background:var(--green-l);color:var(--green);border-radius:999px;padding:4px 14px;font-size:12px;font-weight:700;border:1px solid #BBF7D0;">automatizar</span>
+    <span style="background:var(--teal-l);color:var(--teal);border-radius:999px;padding:4px 14px;font-size:12px;font-weight:700;border:1px solid #99F6E4;">colaborativa</span>
+  </div>
+  <div class="gaps-text">
+    <b>1.</b> Uma sequência de passos para resolver um problema é chamada de
+    <input class="gap-input" id="g1" type="text" placeholder="________" autocomplete="off" spellcheck="false">.<br>
+    <b>2.</b> Quando dividimos um problema grande em partes menores, estamos usando a
+    <input class="gap-input" id="g2" type="text" placeholder="________" autocomplete="off" spellcheck="false">.<br>
+    <b>3.</b> Utilizar uma função já criada em outros contextos é chamado de
+    <input class="gap-input" id="g3" type="text" placeholder="________" autocomplete="off" spellcheck="false">.<br>
+    <b>4.</b> Quando escrevemos um algoritmo em uma linguagem de programação para o computador executar, dizemos que estamos a
+    <input class="gap-input" id="g4" type="text" placeholder="________" autocomplete="off" spellcheck="false">.<br>
+    <b>5.</b> O trabalho em equipe onde cada membro resolve uma parte do problema é chamado de programação
+    <input class="gap-input" id="g5" type="text" placeholder="________" autocomplete="off" spellcheck="false">.
+  </div>
+  <div class="btn-row">
+    <button class="primary" id="btn-gaps" onclick="confirmarGaps()">✔ Confirmar lacunas</button>
+    <button id="btn-limpar" onclick="limparGaps()">⟳ Limpar respostas</button>
+  </div>
+  <div class="feedback" id="fb7"></div>
+</div>
+
+<!-- Finalizar -->
+<button class="btn-final" id="btn-final" onclick="finalizarProva()" disabled>
+  🏁 Ver resultado final
+</button>
+
+<!-- Resultado -->
+<div class="final-card" id="final-card">
+  <div class="nota-circle" id="nota-circle">
+    <span class="nota-num" id="nota-num">0</span>
+    <span class="nota-dez">/ 10</span>
+  </div>
+  <div class="nota-msg" id="nota-msg"></div>
+  <div class="nota-detalhe" id="nota-detalhe"></div>
+  <div class="nota-breakdown" id="nota-breakdown"></div>
+</div>
+
+</div>
+
+<script>
+// Estado: null = não respondido ainda
+var R = { q1:null, q2:null, q3:null, q5:null, ordem:null, match:null, gaps:null };
+
+// ── Progresso ─────────────────────────────────────────────────
+function progresso() {
+  var n = [R.q1,R.q2,R.q3,R.q5,R.ordem,R.match,R.gaps].filter(function(v){return v!==null;}).length;
+  document.getElementById('prog-wrap').style.display = 'flex';
+  document.getElementById('prog-fill').style.width = Math.round(n/7*100)+'%';
+  document.getElementById('prog-count').textContent = n+' / 7';
+  var btn = document.getElementById('btn-final');
+  if (n === 7) {
+    btn.disabled = false;
+    btn.textContent = '🏁 Ver resultado final';
+  } else {
+    btn.disabled = true;
+    btn.textContent = '🏁 Ver resultado final — conclua todas as atividades ('+n+'/7)';
+  }
+}
+
+// ── Múltipla escolha: marca em azul, não revela ───────────────
+function pick(qid, el, correct) {
+  if (R[qid] !== null) return;
+  R[qid] = correct;
+  document.getElementById(qid).querySelectorAll('.option').forEach(function(o){
+    o.style.pointerEvents='none';
+  });
+  el.classList.add('pending');
+  progresso();
+}
+
+// ── Drag & drop ───────────────────────────────────────────────
+var dragSrc = null;
+var sl = document.getElementById('sortable');
+
+function initDrag() {
+  sl.querySelectorAll('.step-row').forEach(function(row) {
+    row.addEventListener('dragstart', function(){
+      dragSrc = row;
+      setTimeout(function(){ row.style.opacity='0.4'; }, 0);
+    });
+    row.addEventListener('dragend', function(){
+      row.style.opacity='1';
+      sl.querySelectorAll('.step-row').forEach(function(r){ r.classList.remove('over'); });
+    });
+    row.addEventListener('dragover', function(e){
+      e.preventDefault();
+      sl.querySelectorAll('.step-row').forEach(function(r){ r.classList.remove('over'); });
+      row.classList.add('over');
+    });
+    row.addEventListener('drop', function(e){
+      e.preventDefault();
+      row.classList.remove('over');
+      if (dragSrc && dragSrc !== row) {
+        var rows = Array.from(sl.querySelectorAll('.step-row'));
+        if (rows.indexOf(dragSrc) < rows.indexOf(row)) sl.insertBefore(dragSrc, row.nextSibling);
+        else sl.insertBefore(dragSrc, row);
+      }
+    });
+  });
+}
+initDrag();
+
+function shuffleSteps() {
+  if (R.ordem !== null) return;
+  var items = Array.from(sl.querySelectorAll('.step-row'));
+  for (var i=items.length-1; i>0; i--) {
+    var j=Math.floor(Math.random()*(i+1));
+    sl.appendChild(items[j]); items.splice(j,1);
+  }
+  sl.querySelectorAll('.step-row').forEach(function(r){ r.classList.remove('correct','wrong','over'); r.style.opacity='1'; });
+  document.getElementById('fb4').className='feedback';
+  initDrag();
+}
+
+function confirmarOrdem() {
+  var items = Array.from(sl.querySelectorAll('.step-row'));
+  var ok = true;
+  for (var i=0; i<items.length-1; i++) {
+    if (parseInt(items[i].getAttribute('data-order')) > parseInt(items[i+1].getAttribute('data-order'))) { ok=false; break; }
+  }
+  R.ordem = ok;
+  sl.querySelectorAll('.step-row').forEach(function(r){ r.setAttribute('draggable','false'); r.style.cursor='default'; });
+  document.getElementById('btn-ordem').disabled = true;
+  document.getElementById('btn-shuffle').disabled = true;
+  var fb = document.getElementById('fb4');
+  fb.className = 'feedback info';
+  fb.textContent = '✓ Ordem confirmada! O resultado aparecerá no final.';
+  progresso();
+}
+
+// ── Relacionar ────────────────────────────────────────────────
+var MG = { m1:'decomp', m2:'reuso', m3:'auto', m4:'colab' };
+
+function confirmarMatch() {
+  var todos = Object.keys(MG).every(function(id){ return !!document.getElementById(id).value; });
+  if (!todos) {
+    var fb=document.getElementById('fb6'); fb.className='feedback err';
+    fb.textContent='✗ Selecione uma opção para cada situação antes de confirmar.'; return;
+  }
+  R.match = Object.keys(MG).filter(function(id){ return document.getElementById(id).value===MG[id]; }).length;
+  document.querySelectorAll('.match-sel').forEach(function(s){ s.disabled=true; });
+  document.getElementById('btn-match').disabled = true;
+  var fb=document.getElementById('fb6'); fb.className='feedback info';
+  fb.textContent='✓ Relações confirmadas! O resultado aparecerá no final.';
+  progresso();
+}
+
+// ── Lacunas ───────────────────────────────────────────────────
+var GG = { g1:'algoritmo', g2:'decomposição', g3:'reúso', g4:'automatizar', g5:'colaborativa' };
+
+function norm(s) {
+  return (s||'').trim().toLowerCase()
+    .replace(/[éê]/g,'e').replace(/[ãâá]/g,'a').replace(/ç/g,'c')
+    .replace(/[úû]/g,'u').replace(/[õôó]/g,'o').replace(/í/g,'i');
+}
+
+// Limpar só é permitido ANTES de confirmar
+function limparGaps() {
+  if (R.gaps !== null) return; // já confirmado, não limpa
+  Object.keys(GG).forEach(function(id){
+    var inp=document.getElementById(id);
+    inp.value=''; inp.classList.remove('ok','err');
+  });
+  document.getElementById('fb7').className='feedback';
+}
+
+function confirmarGaps() {
+  var todos = Object.keys(GG).every(function(id){ return !!document.getElementById(id).value.trim(); });
+  if (!todos) {
+    var fb=document.getElementById('fb7'); fb.className='feedback err';
+    fb.textContent='✗ Preencha todas as lacunas antes de confirmar.'; return;
+  }
+  R.gaps = Object.keys(GG).filter(function(id){ return norm(document.getElementById(id).value)===norm(GG[id]); }).length;
+  document.querySelectorAll('.gap-input').forEach(function(i){ i.disabled=true; });
+  document.getElementById('btn-gaps').disabled = true;
+  document.getElementById('btn-limpar').disabled = true;
+  var fb=document.getElementById('fb7'); fb.className='feedback info';
+  fb.textContent='✓ Lacunas confirmadas! O resultado aparecerá no final.';
+  progresso();
+}
+
+// ── Nota: inteira 0-10 ────────────────────────────────────────
+// Pontos brutos máx: q1+q2+q3+q5(4) + ordem(1) + match(4) + gaps(5) = 14
+// Nota = round( brutos / 14 * 10 )  →  garante inteiro 0-10
+function calcNota() {
+  var p = 0;
+  p += (R.q1===true?1:0)+(R.q2===true?1:0)+(R.q3===true?1:0)+(R.q5===true?1:0);
+  p += (R.ordem===true?1:0);
+  p += (R.match||0);
+  p += (R.gaps||0);
+  return Math.round(p/14*10);
+}
+
+// ── Resultado final ───────────────────────────────────────────
+function finalizarProva() {
+  // 1. Corrigir múltipla escolha
+  ['q1','q2','q3','q5'].forEach(function(qid){
+    document.getElementById(qid).querySelectorAll('.option').forEach(function(o){
+      var isC = o.getAttribute('onclick')&&o.getAttribute('onclick').indexOf(',true)')!==-1;
+      var isPen = o.classList.contains('pending');
+      o.classList.remove('pending');
+      if (isC) o.classList.add('correct');
+      if (isPen&&!isC) o.classList.add('wrong');
+    });
+    var fb=document.getElementById('fb'+qid.replace('q',''));
+    fb.className = R[qid]===true ? 'feedback ok' : 'feedback err';
+    fb.textContent = R[qid]===true ? '✓ Correto!' : '✗ Incorreto. A alternativa correta está em verde.';
+  });
+
+  // 2. Corrigir ordenação
+  sl.querySelectorAll('.step-row').forEach(function(r){
+    r.classList.add(R.ordem ? 'correct' : 'wrong');
+  });
+  var fb4=document.getElementById('fb4');
+  if (R.ordem) { fb4.className='feedback ok'; fb4.textContent='✓ Sequência correta!'; }
+  else { fb4.className='feedback err'; fb4.textContent='✗ Ordem incorreta. Correta: 1) Identificar → 2) Decompor e dividir → 3) Cada um resolve → 4) Unir e testar → 5) Revisar.'; }
+
+  // 3. Corrigir relacionar
+  Object.keys(MG).forEach(function(id){
+    var s=document.getElementById(id); s.classList.remove('ok','err');
+    s.classList.add(s.value===MG[id]?'ok':'err');
+  });
+  var fb6=document.getElementById('fb6');
+  if (R.match===4) { fb6.className='feedback ok'; fb6.textContent='✓ Perfeito! Todos os conceitos corretos.'; }
+  else { fb6.className='feedback err'; fb6.textContent='✗ '+R.match+' de 4 corretos. Os erros estão em vermelho.'; }
+
+  // 4. Corrigir lacunas
+  Object.keys(GG).forEach(function(id){
+    var inp=document.getElementById(id); inp.classList.remove('ok','err');
+    if (norm(inp.value)===norm(GG[id])) { inp.classList.add('ok'); }
+    else { inp.classList.add('err'); inp.setAttribute('placeholder','→ '+GG[id]); }
+  });
+  var fb7=document.getElementById('fb7');
+  if (R.gaps===5) { fb7.className='feedback ok'; fb7.textContent='✓ Todas as lacunas corretas!'; }
+  else { fb7.className='feedback err'; fb7.textContent='✗ '+R.gaps+' de 5 corretas. As incorretas mostram a resposta esperada.'; }
+
+  // 5. Nota inteira 0-10
+  var nota = calcNota();
+  var circle=document.getElementById('nota-circle');
+  document.getElementById('nota-num').textContent = nota;
+  circle.className='nota-circle';
+  var msg,det;
+  if (nota>=9)      { circle.classList.add('verde');    msg='🏆 Excelente! Você dominou o conteúdo!';         det='Parabéns! Demonstrou ótimo entendimento sobre algoritmos, decomposição e reúso.'; }
+  else if (nota>=7) { circle.classList.add('verde');    msg='😊 Muito bem! Ótimo desempenho!';                det='Você acertou a maior parte. Revise os itens marcados em vermelho.'; }
+  else if (nota>=5) { circle.classList.add('amarelo');  msg='🙂 Resultado razoável. Você pode melhorar!';    det='Revise os conceitos de decomposição, reúso e automatização e tente novamente.'; }
+  else              { circle.classList.add('vermelho'); msg='💪 Continue estudando! Você consegue!';          det='Leia novamente o material e refaça as atividades. Cada erro é uma chance de aprender.'; }
+  document.getElementById('nota-msg').textContent = msg;
+  document.getElementById('nota-detalhe').textContent = det;
+
+  // 6. Detalhamento por atividade
+  var qPts=(R.q1===true?1:0)+(R.q2===true?1:0)+(R.q3===true?1:0)+(R.q5===true?1:0);
+  document.getElementById('nota-breakdown').innerHTML =
+    biItem('Múltipla escolha',qPts,4) +
+    biItem('Ordenação',R.ordem===true?1:0,1) +
+    biItem('Relacionar',(R.match||0),4) +
+    biItem('Lacunas',(R.gaps||0),5);
+
+  var fc=document.getElementById('final-card');
+  fc.classList.add('show');
+  setTimeout(function(){ fc.scrollIntoView({behavior:'smooth',block:'start'}); },100);
+  document.getElementById('btn-final').disabled=true;
+  document.getElementById('btn-final').textContent='✔ Resultado exibido';
+}
+
+function biItem(label,got,max) {
+  var cls = got>=max ? 'ok' : (got>0 ? 'par' : 'err');
+  return '<div class="bi"><span class="bi-label">'+label+'</span><span class="bi-val '+cls+'">'+got+' / '+max+'</span></div>';
+}
+
+// Inicia com steps embaralhados
+shuffleSteps();
+</script>
+</body>
+</html>
